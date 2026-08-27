@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ExchangeRate.Api/ExchangeRate.Api.csproj" />
+  <Project Path="ExchangeRate.Application/ExchangeRate.Application.csproj" />
+  <Project Path="ExchangeRate.Domain/ExchangeRate.Domain.csproj" />
+  <Project Path="ExchangeRate.Infrastructure/ExchangeRate.Infrastructure.csproj" />
+</Solution>

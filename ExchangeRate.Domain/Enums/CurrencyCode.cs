@@ -1,0 +1,36 @@
+namespace ExchangeRate.Domain.Enums;
+
+public enum CurrencyCode
+{
+    USD,
+    TRY,
+    EUR,
+    GBP,
+    JPY,
+    CAD,
+    AUD,
+    CHF,
+    CNY,
+    SEK,
+    NZD,
+    MXN,
+    SGD,
+    HKD,
+    NOK,
+    KRW,
+    BGN,
+    BRL,
+    CZK,
+    DKK,
+    HUF,
+    IDR,
+    ILS,
+    INR,
+    ISK,
+    MYR,
+    PHP,
+    PLN,
+    RON,
+    THB,
+    ZAR
+}
