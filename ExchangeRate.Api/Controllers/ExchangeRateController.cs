@@ -21,6 +21,7 @@ public class ExchangeRateController : ControllerBase
     public async Task<IActionResult> GetExchangeRate(CurrencyCode baseCurrency, CurrencyCode targetCurrency, [FromQuery] DateOnly? date, CancellationToken cancellationToken)
     {
         var queryDate = date ?? DateOnly.FromDateTime(DateTime.Today);
+        // Deliberate test comment to trigger the new AI Code Review workflow
         var query = new GetExchangeRateQuery(queryDate, baseCurrency, targetCurrency);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
