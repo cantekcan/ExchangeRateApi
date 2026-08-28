@@ -22,10 +22,7 @@ public class ExchangeRateController : ControllerBase
     [HttpGet("{baseCurrency}/{targetCurrency}")]
     public async Task<IActionResult> GetExchangeRate(CurrencyCode baseCurrency, CurrencyCode targetCurrency, [FromQuery] DateOnly? date, CancellationToken cancellationToken)
     {
-        var today = DateOnly.FromDateTime(_timeProvider.GetLocalNow().DateTime);
-        var queryDate = date ?? today;
-
-        var validationResult = ValidateDate(queryDate, today);
+        var validationResult = GetValidatedDate(date, out var queryDate);
         if (validationResult != null)
         {
             return validationResult;
@@ -39,10 +36,7 @@ public class ExchangeRateController : ControllerBase
     [HttpGet("{baseCurrency}")]
     public async Task<IActionResult> GetExchangeRates(CurrencyCode baseCurrency, [FromQuery] DateOnly? date, CancellationToken cancellationToken)
     {
-        var today = DateOnly.FromDateTime(_timeProvider.GetLocalNow().DateTime);
-        var queryDate = date ?? today;
-
-        var validationResult = ValidateDate(queryDate, today);
+        var validationResult = GetValidatedDate(date, out var queryDate);
         if (validationResult != null)
         {
             return validationResult;
@@ -53,12 +47,16 @@ public class ExchangeRateController : ControllerBase
         return Ok(result);
     }
 
-    private IActionResult? ValidateDate(DateOnly queryDate, DateOnly today)
+    private IActionResult? GetValidatedDate(DateOnly? inputDate, out DateOnly finalDate)
     {
-        if (queryDate > today)
+        var today = DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
+        finalDate = inputDate ?? today;
+
+        if (finalDate > today)
         {
             return BadRequest("Date cannot be in the future.");
         }
+
         return null;
     }
 }

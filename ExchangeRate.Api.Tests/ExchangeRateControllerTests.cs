@@ -5,10 +5,11 @@ using ExchangeRate.Application.Features.ExchangeRates.Queries.GetExchangeRates;
 using ExchangeRate.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Xunit;
 
-namespace ExchangeRate.Application.Tests;
+namespace ExchangeRate.Api.Tests;
 
 public class ExchangeRateControllerTests
 {
@@ -20,7 +21,7 @@ public class ExchangeRateControllerTests
     {
         _mediatorMock = Substitute.For<IMediator>();
         
-        // Mock current date as 2026-08-28
+        // Mock current date as 2026-08-28 using the official FakeTimeProvider
         var mockToday = new DateTimeOffset(2026, 8, 28, 12, 0, 0, TimeSpan.Zero);
         _timeProvider = new FakeTimeProvider(mockToday);
         
@@ -87,18 +88,5 @@ public class ExchangeRateControllerTests
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal("Date cannot be in the future.", badRequestResult.Value);
-    }
-
-    private class FakeTimeProvider : TimeProvider
-    {
-        private readonly DateTimeOffset _now;
-
-        public FakeTimeProvider(DateTimeOffset now)
-        {
-            _now = now;
-        }
-
-        public override DateTimeOffset GetUtcNow() => _now;
-        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
     }
 }
