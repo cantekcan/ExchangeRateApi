@@ -3,4 +3,6 @@
   <Project Path="ExchangeRate.Application/ExchangeRate.Application.csproj" />
   <Project Path="ExchangeRate.Domain/ExchangeRate.Domain.csproj" />
   <Project Path="ExchangeRate.Infrastructure/ExchangeRate.Infrastructure.csproj" />
+  <Project Path="ExchangeRate.Application.Tests/ExchangeRate.Application.Tests.csproj" />
+  <Project Path="ExchangeRate.Api.Tests/ExchangeRate.Api.Tests.csproj" />
 </Solution>

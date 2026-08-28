@@ -37,6 +37,7 @@ builder.Services.Configure<FrankfurterOptions>(
     builder.Configuration.GetSection(FrankfurterOptions.SectionName));
 
 // DI Registrations
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IExchangeRateManager, ExchangeRateManager>();
 
 // HttpClient with Typed Client
