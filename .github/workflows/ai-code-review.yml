@@ -1,0 +1,123 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        shell: bash
+        run: |
+          git diff \
+            "origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }}" \
+            -- '*.cs' '*.csproj' '*.json' > pr.diff
+
+          echo "Diff size: $(wc -c < pr.diff) bytes"
+
+      - name: Run Gemini review
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        shell: python
+        run: |
+          import json
+          import os
+          import urllib.request
+
+          with open("pr.diff", "r", encoding="utf-8", errors="ignore") as f:
+              diff = f.read()
+
+          if not diff.strip():
+              print("No relevant changes found.")
+              with open("review.md", "w", encoding="utf-8") as f:
+                  f.write("### 🤖 AI Code Review\n\nNo `.cs`, `.csproj` or `.json` changes found.")
+              raise SystemExit(0)
+
+          # İlk aşamada çok büyük PR'ları sınırlıyoruz.
+          diff = diff[:50000]
+
+          prompt = f"""
+          You are a senior .NET 8 / C# backend reviewer.
+
+          Review the following Pull Request diff.
+
+          Focus on:
+          - Security vulnerabilities
+          - Bugs and correctness issues
+          - Performance
+          - Async/await problems
+          - Exception handling
+          - Dependency Injection
+          - Clean Code
+          - SOLID
+          - .NET best practices
+          - Test coverage gaps
+
+          Rules:
+          - Only report meaningful issues.
+          - Do not complain about harmless style differences.
+          - Be concise and actionable.
+          - Mention the file when possible.
+          - Give a suggested fix when useful.
+          - Answer in Turkish.
+
+          PR DIFF:
+          ```diff
+          {diff}
+          ```
+          """
+
+          url = (
+              "https://generativelanguage.googleapis.com/v1beta/models/"
+              "gemini-2.5-flash-lite:generateContent"
+              f"?key={os.environ['GEMINI_API_KEY']}"
+          )
+
+          payload = {
+              "contents": [
+                  {
+                      "parts": [
+                          {
+                              "text": prompt
+                          }
+                      ]
+                  }
+              ]
+          }
+
+          request = urllib.request.Request(
+              url,
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json"},
+              method="POST"
+          )
+
+          with urllib.request.urlopen(request) as response:
+              result = json.loads(response.read().decode("utf-8"))
+
+          review = result["candidates"][0]["content"]["parts"][0]["text"]
+
+          with open("review.md", "w", encoding="utf-8") as f:
+              f.write("### 🤖 Gemini AI Code Review\n\n")
+              f.write(review)
+
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment \
+            "${{ github.event.pull_request.number }}" \
+            --body-file review.md
