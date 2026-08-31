@@ -2,6 +2,10 @@ using System.Text.Json.Serialization;
 using Microsoft.OpenApi;
 using ExchangeRate.Application.Abstractions;
 using ExchangeRate.Application.Services;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Text.Json;
+using System.Text;
 using ExchangeRate.Infrastructure.Configuration;
 using ExchangeRate.Infrastructure.ExternalServices.Frankfurter;
 using ExchangeRate.Api.Middleware;
@@ -46,7 +50,8 @@ builder.Services.AddHttpClient<IFrankfurterApiClient, FrankfurterApiClient>();
 // MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetExchangeRateQuery).Assembly));
 
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy("System is running"));
 
 var app = builder.Build();
 
@@ -62,8 +67,39 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = WriteResponse
+});
 
 app.Run();
+
+static Task WriteResponse(HttpContext context, HealthReport report)
+{
+    context.Response.ContentType = "application/json; charset=utf-8";
+
+    var options = new JsonWriterOptions { Indented = true };
+
+    using var memoryStream = new MemoryStream();
+    using (var writer = new Utf8JsonWriter(memoryStream, options))
+    {
+        writer.WriteStartObject();
+        writer.WriteString("status", report.Status.ToString());
+        writer.WriteStartObject("results");
+
+        foreach (var entry in report.Entries)
+        {
+            writer.WriteStartObject(entry.Key);
+            writer.WriteString("status", entry.Value.Status.ToString());
+            writer.WriteString("description", entry.Value.Description);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
+        writer.WriteEndObject();
+    }
+
+    return context.Response.WriteAsync(Encoding.UTF8.GetString(memoryStream.ToArray()));
+}
 
 public partial class Program { }
