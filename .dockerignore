@@ -1,0 +1,24 @@
+# Ignore build artifacts
+**/bin/
+**/obj/
+
+# Ignore source control files
+.git/
+.github/
+
+# Ignore IDE files
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Ignore local config files that might contain secrets
+appsettings.Development.json
+secrets.json
+
+# Ignore system files
+.DS_Store
+Thumbs.db
