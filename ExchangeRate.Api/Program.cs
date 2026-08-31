@@ -5,7 +5,6 @@ using ExchangeRate.Application.Services;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
-using System.Text;
 using ExchangeRate.Infrastructure.Configuration;
 using ExchangeRate.Infrastructure.ExternalServices.Frankfurter;
 using ExchangeRate.Api.Middleware;
@@ -74,32 +73,28 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 
 app.Run();
 
-static Task WriteResponse(HttpContext context, HealthReport report)
+static async Task WriteResponse(HttpContext context, HealthReport report)
 {
     context.Response.ContentType = "application/json; charset=utf-8";
 
     var options = new JsonWriterOptions { Indented = true };
 
-    using var memoryStream = new MemoryStream();
-    using (var writer = new Utf8JsonWriter(memoryStream, options))
+    await using var writer = new Utf8JsonWriter(context.Response.Body, options);
+
+    writer.WriteStartObject();
+    writer.WriteString("status", report.Status.ToString());
+    writer.WriteStartObject("results");
+
+    foreach (var entry in report.Entries)
     {
-        writer.WriteStartObject();
-        writer.WriteString("status", report.Status.ToString());
-        writer.WriteStartObject("results");
-
-        foreach (var entry in report.Entries)
-        {
-            writer.WriteStartObject(entry.Key);
-            writer.WriteString("status", entry.Value.Status.ToString());
-            writer.WriteString("description", entry.Value.Description);
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndObject();
+        writer.WriteStartObject(entry.Key);
+        writer.WriteString("status", entry.Value.Status.ToString());
+        writer.WriteString("description", entry.Value.Description);
         writer.WriteEndObject();
     }
 
-    return context.Response.WriteAsync(Encoding.UTF8.GetString(memoryStream.ToArray()));
+    writer.WriteEndObject();
+    writer.WriteEndObject();
 }
 
 public partial class Program { }
