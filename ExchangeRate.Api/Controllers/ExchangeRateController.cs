@@ -12,6 +12,7 @@ public class ExchangeRateController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly TimeProvider _timeProvider;
+    // Test branch protection and CI pipeline trigger
 
     public ExchangeRateController(IMediator mediator, TimeProvider timeProvider)
     {
