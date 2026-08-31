@@ -2,6 +2,9 @@ using System.Text.Json.Serialization;
 using Microsoft.OpenApi;
 using ExchangeRate.Application.Abstractions;
 using ExchangeRate.Application.Services;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Text.Json;
 using ExchangeRate.Infrastructure.Configuration;
 using ExchangeRate.Infrastructure.ExternalServices.Frankfurter;
 using ExchangeRate.Api.Middleware;
@@ -46,6 +49,9 @@ builder.Services.AddHttpClient<IFrankfurterApiClient, FrankfurterApiClient>();
 // MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetExchangeRateQuery).Assembly));
 
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy("System is running"));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -60,4 +66,35 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = WriteResponse
+});
+
 app.Run();
+
+static async Task WriteResponse(HttpContext context, HealthReport report)
+{
+    context.Response.ContentType = "application/json; charset=utf-8";
+
+    var options = new JsonWriterOptions { Indented = true };
+
+    await using var writer = new Utf8JsonWriter(context.Response.Body, options);
+
+    writer.WriteStartObject();
+    writer.WriteString("status", report.Status.ToString());
+    writer.WriteStartObject("results");
+
+    foreach (var entry in report.Entries)
+    {
+        writer.WriteStartObject(entry.Key);
+        writer.WriteString("status", entry.Value.Status.ToString());
+        writer.WriteString("description", entry.Value.Description);
+        writer.WriteEndObject();
+    }
+
+    writer.WriteEndObject();
+    writer.WriteEndObject();
+}
+
+public partial class Program { }
