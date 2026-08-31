@@ -5,6 +5,7 @@ using ExchangeRate.Application.Services;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
+using Microsoft.AspNetCore.HttpOverrides;
 using ExchangeRate.Infrastructure.Configuration;
 using ExchangeRate.Infrastructure.ExternalServices.Frankfurter;
 using ExchangeRate.Api.Middleware;
@@ -54,22 +55,27 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+app.UseHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = WriteResponse
+});
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.MapHealthChecks("/health", new HealthCheckOptions
-{
-    ResponseWriter = WriteResponse
-});
 
 app.Run();
 
