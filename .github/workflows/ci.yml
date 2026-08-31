@@ -33,3 +33,6 @@ jobs:
 
       - name: Run tests
         run: dotnet test ExchangeRate.slnx --configuration Release --no-build
+
+      - name: Docker Build
+        run: docker build -t exchange-rate-api:ci .
