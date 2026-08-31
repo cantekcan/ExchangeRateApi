@@ -13,6 +13,7 @@ public class ExchangeRateController : ControllerBase
     private readonly IMediator _mediator;
     private readonly TimeProvider _timeProvider;
     // Test branch protection and CI pipeline trigger
+    intentionally_broken_syntax_error_here;
 
     public ExchangeRateController(IMediator mediator, TimeProvider timeProvider)
     {
