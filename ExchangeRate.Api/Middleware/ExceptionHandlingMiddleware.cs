@@ -35,7 +35,7 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception has occurred.");
+            _logger.LogError(ex, "An unhandled exception occurred while processing the request.");
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -50,8 +50,8 @@ public class ExceptionHandlingMiddleware
 
         var code = HttpStatusCode.InternalServerError;
         var title = "An internal server error occurred.";
-        var detail = _env.IsDevelopment() 
-            ? exception.ToString() 
+        var detail = _env.IsDevelopment()
+            ? exception.Message
             : "An unexpected error occurred. Please try again later.";
 
         switch (exception)

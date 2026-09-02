@@ -132,4 +132,31 @@ public class ExceptionHandlingMiddlewareTests
         Assert.Equal("An unexpected error occurred. Please try again later.", problem.Detail);
         Assert.DoesNotContain("leak", problem.Detail);
     }
+
+    [Fact]
+    public async Task InvokeAsync_ShouldReturn500WithMessage_WhenUnhandledExceptionThrownInDevelopment()
+    {
+        // Arrange
+        _envMock.EnvironmentName.Returns("Development");
+        var middleware = new ExceptionHandlingMiddleware(
+            _ => throw new InvalidOperationException("Database table not found"),
+            _loggerMock,
+            _envMock);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
+
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        Assert.NotNull(problem);
+        Assert.Equal("An internal server error occurred.", problem.Title);
+        Assert.Equal("Database table not found", problem.Detail);
+    }
 }
