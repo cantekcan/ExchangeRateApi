@@ -30,28 +30,20 @@ public class FrankfurterApiClient : IFrankfurterApiClient
         var url = $"/v1/{dateStr}?from={baseStr}&to={targetStr}";
         _logger.LogInformation("Requesting Frankfurter API: {Url}", url);
 
-        try
-        {
-            var response = await _httpClient.GetFromJsonAsync<FrankfurterRateResponse>(url, cancellationToken);
+        var response = await _httpClient.GetFromJsonAsync<FrankfurterRateResponse>(url, cancellationToken);
 
-            if (response == null || !response.Rates.ContainsKey(targetStr))
-            {
-                throw new HttpRequestException("Rate not found in response.");
-            }
-
-            return new ExchangeRateModel
-            {
-                Date = response.Date,
-                Base = response.Base,
-                Target = targetStr,
-                Rate = response.Rates[targetStr]
-            };
-        }
-        catch (HttpRequestException ex)
+        if (response == null || !response.Rates.ContainsKey(targetStr))
         {
-            _logger.LogError(ex, "Error calling Frankfurter API for single rate: {Url}", url);
-            throw;
+            throw new HttpRequestException("Rate not found in response.");
         }
+
+        return new ExchangeRateModel
+        {
+            Date = response.Date,
+            Base = response.Base,
+            Target = targetStr,
+            Rate = response.Rates[targetStr]
+        };
     }
 
     public async Task<ExchangeRatesListModel> GetRatesAsync(DateOnly date, CurrencyCode baseCurrency, CancellationToken cancellationToken)
@@ -62,26 +54,18 @@ public class FrankfurterApiClient : IFrankfurterApiClient
         var url = $"/v1/{dateStr}?from={baseStr}";
         _logger.LogInformation("Requesting Frankfurter API: {Url}", url);
 
-        try
-        {
-            var response = await _httpClient.GetFromJsonAsync<FrankfurterRateResponse>(url, cancellationToken);
+        var response = await _httpClient.GetFromJsonAsync<FrankfurterRateResponse>(url, cancellationToken);
 
-            if (response == null)
-            {
-                throw new HttpRequestException("Response was empty.");
-            }
-
-            return new ExchangeRatesListModel
-            {
-                Date = response.Date,
-                Base = response.Base,
-                Rates = response.Rates
-            };
-        }
-        catch (HttpRequestException ex)
+        if (response == null)
         {
-            _logger.LogError(ex, "Error calling Frankfurter API for rates list: {Url}", url);
-            throw;
+            throw new HttpRequestException("Response was empty.");
         }
+
+        return new ExchangeRatesListModel
+        {
+            Date = response.Date,
+            Base = response.Base,
+            Rates = response.Rates
+        };
     }
 }
