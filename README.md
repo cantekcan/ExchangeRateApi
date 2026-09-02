@@ -16,7 +16,7 @@ A production-oriented **.NET 8 Web API** built around a simple exchange-rate use
 - **Docker** multi-stage builds & non-root containers
 - **GitHub Actions** CI/CD
 - **GitHub Container Registry (GHCR)**
-- Branch protection & automated **AI Code Review**
+- Branch protection & automated **AI Code Review** powered by Gemini
 
 ## Architecture
 
@@ -24,16 +24,20 @@ A production-oriented **.NET 8 Web API** built around a simple exchange-rate use
      │
      ▼
     Application
-    (CQRS/MediatR)
+    (CQRS / MediatR)
      │
      ▼
     Domain
-
-    Infrastructure ──► Frankfurter API
+     ▲
+     │
+    Infrastructure
+     │
+     ▼
+    Frankfurter API
 
 ## Live Demo
 
 🚀 **Swagger:**  
 https://exchangerateapi-rzyg.onrender.com/swagger/index.html
 
-> The exchange-rate functionality is intentionally simple. The main goal of this project is to demonstrate how a simple business problem can be implemented with production-oriented architecture, testing, security, CI/CD, and code-quality practices.
+> The exchange-rate functionality is intentionally simple. The main goal of this project is to demonstrate how a simple business problem can be implemented with production-oriented architecture, testing, security, CI/CD, AI-assisted development, and code-quality practices.
