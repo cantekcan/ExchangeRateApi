@@ -13,6 +13,11 @@ namespace ExchangeRate.Api.Tests;
 
 public class ExceptionHandlingMiddlewareTests
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private readonly ILogger<ExceptionHandlingMiddleware> _loggerMock;
     private readonly IWebHostEnvironment _envMock;
 
@@ -43,7 +48,7 @@ public class ExceptionHandlingMiddlewareTests
         Assert.StartsWith("application/problem+json", context.Response.ContentType);
 
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, JsonOptions);
 
         Assert.NotNull(problem);
         Assert.Equal("External API error.", problem.Title);
@@ -71,7 +76,7 @@ public class ExceptionHandlingMiddlewareTests
         Assert.Equal((int)HttpStatusCode.BadGateway, context.Response.StatusCode);
 
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, JsonOptions);
 
         Assert.NotNull(problem);
         Assert.Equal("External API error.", problem.Title);
@@ -98,7 +103,7 @@ public class ExceptionHandlingMiddlewareTests
         Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
 
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, JsonOptions);
 
         Assert.NotNull(problem);
         Assert.Equal("Invalid request.", problem.Title);
@@ -125,7 +130,7 @@ public class ExceptionHandlingMiddlewareTests
         Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
 
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, JsonOptions);
 
         Assert.NotNull(problem);
         Assert.Equal("An internal server error occurred.", problem.Title);
@@ -153,7 +158,7 @@ public class ExceptionHandlingMiddlewareTests
         Assert.Equal((int)HttpStatusCode.InternalServerError, context.Response.StatusCode);
 
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, JsonOptions);
 
         Assert.NotNull(problem);
         Assert.Equal("An internal server error occurred.", problem.Title);
@@ -181,7 +186,7 @@ public class ExceptionHandlingMiddlewareTests
         Assert.StartsWith("application/problem+json", context.Response.ContentType);
 
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, JsonOptions);
 
         Assert.NotNull(problem);
         Assert.Equal("The request timed out.", problem.Title);

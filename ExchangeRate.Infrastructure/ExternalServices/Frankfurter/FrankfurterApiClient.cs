@@ -32,7 +32,7 @@ public class FrankfurterApiClient : IFrankfurterApiClient
 
         var response = await _httpClient.GetFromJsonAsync<FrankfurterRateResponse>(url, cancellationToken);
 
-        if (response == null || !response.Rates.ContainsKey(targetStr))
+        if (response == null || !response.Rates.TryGetValue(targetStr, out var rate))
         {
             throw new HttpRequestException("Rate not found in response.");
         }
@@ -42,7 +42,7 @@ public class FrankfurterApiClient : IFrankfurterApiClient
             Date = response.Date,
             Base = response.Base,
             Target = targetStr,
-            Rate = response.Rates[targetStr]
+            Rate = rate
         };
     }
 

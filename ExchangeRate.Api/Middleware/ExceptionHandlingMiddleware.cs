@@ -87,6 +87,6 @@ public class ExceptionHandlingMiddleware
 
         context.Response.StatusCode = (int)code;
 
-        return context.Response.WriteAsJsonAsync(problemDetails, JsonOptions, "application/problem+json");
+        return context.Response.WriteAsJsonAsync(problemDetails, JsonOptions, "application/problem+json", context.RequestAborted);
     }
 }
