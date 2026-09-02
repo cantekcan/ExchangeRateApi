@@ -192,4 +192,28 @@ public class ExceptionHandlingMiddlewareTests
         Assert.Equal("The request timed out.", problem.Title);
         Assert.Equal("The operation was canceled because it exceeded the timeout limit.", problem.Detail);
     }
+
+    [Fact]
+    public async Task InvokeAsync_ShouldReturnCompletedTaskWithoutWritingResponse_WhenClientCanceledRequest()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var middleware = new ExceptionHandlingMiddleware(
+            _ => throw new OperationCanceledException(cts.Token),
+            _loggerMock,
+            _envMock);
+
+        var context = new DefaultHttpContext();
+        context.RequestAborted = cts.Token;
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal(200, context.Response.StatusCode); // Status code unchanged
+        Assert.Equal(0, context.Response.Body.Length); // Nothing written
+    }
 }
