@@ -159,4 +159,32 @@ public class ExceptionHandlingMiddlewareTests
         Assert.Equal("An internal server error occurred.", problem.Title);
         Assert.Equal("Database table not found", problem.Detail);
     }
+
+    [Fact]
+    public async Task InvokeAsync_ShouldReturn408WithProblemDetails_WhenOperationCanceledExceptionThrown()
+    {
+        // Arrange
+        _envMock.EnvironmentName.Returns("Production");
+        var middleware = new ExceptionHandlingMiddleware(
+            _ => throw new OperationCanceledException(),
+            _loggerMock,
+            _envMock);
+
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        Assert.Equal((int)HttpStatusCode.RequestTimeout, context.Response.StatusCode);
+        Assert.StartsWith("application/problem+json", context.Response.ContentType);
+
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var problem = await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        Assert.NotNull(problem);
+        Assert.Equal("The request timed out.", problem.Title);
+        Assert.Equal("The operation was canceled because it exceeded the timeout limit.", problem.Detail);
+    }
 }
