@@ -20,43 +20,27 @@ public class ExchangeRateController : ControllerBase
     }
 
     [HttpGet("{baseCurrency}/{targetCurrency}")]
-    public async Task<IActionResult> GetExchangeRate(CurrencyCode baseCurrency, CurrencyCode targetCurrency, [FromQuery] DateOnly? date, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetExchangeRate(
+        CurrencyCode baseCurrency, 
+        CurrencyCode targetCurrency, 
+        [FromQuery] DateOnly? date, 
+        CancellationToken cancellationToken)
     {
-        var validationResult = GetValidatedDate(date, out var queryDate);
-        if (validationResult != null)
-        {
-            return validationResult;
-        }
-
+        var queryDate = date ?? DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
         var query = new GetExchangeRateQuery(queryDate, baseCurrency, targetCurrency);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{baseCurrency}")]
-    public async Task<IActionResult> GetExchangeRates(CurrencyCode baseCurrency, [FromQuery] DateOnly? date, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetExchangeRates(
+        CurrencyCode baseCurrency, 
+        [FromQuery] DateOnly? date, 
+        CancellationToken cancellationToken)
     {
-        var validationResult = GetValidatedDate(date, out var queryDate);
-        if (validationResult != null)
-        {
-            return validationResult;
-        }
-
+        var queryDate = date ?? DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
         var query = new GetExchangeRatesQuery(queryDate, baseCurrency);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
-    }
-
-    private IActionResult? GetValidatedDate(DateOnly? inputDate, out DateOnly finalDate)
-    {
-        var today = DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
-        finalDate = inputDate ?? today;
-
-        if (finalDate > today)
-        {
-            return BadRequest("Date cannot be in the future.");
-        }
-
-        return null;
     }
 }

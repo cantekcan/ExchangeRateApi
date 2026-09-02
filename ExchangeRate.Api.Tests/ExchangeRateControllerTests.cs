@@ -21,7 +21,6 @@ public class ExchangeRateControllerTests
     {
         _mediatorMock = Substitute.For<IMediator>();
         
-        // Mock current date as 2026-08-28 using the official FakeTimeProvider
         var mockToday = new DateTimeOffset(2026, 8, 28, 12, 0, 0, TimeSpan.Zero);
         _timeProvider = new FakeTimeProvider(mockToday);
         
@@ -29,27 +28,10 @@ public class ExchangeRateControllerTests
     }
 
     [Fact]
-    public async Task GetExchangeRate_ShouldReturnBadRequest_WhenDateIsInFuture()
+    public async Task GetExchangeRate_ShouldCallMediator_AndReturnOk()
     {
         // Arrange
-        var futureDate = new DateOnly(2026, 8, 29); // 1 day after mockToday
-        var baseCurrency = CurrencyCode.USD;
-        var targetCurrency = CurrencyCode.TRY;
-        var cancellationToken = CancellationToken.None;
-
-        // Act
-        var result = await _sut.GetExchangeRate(baseCurrency, targetCurrency, futureDate, cancellationToken);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("Date cannot be in the future.", badRequestResult.Value);
-    }
-
-    [Fact]
-    public async Task GetExchangeRate_ShouldReturnOk_WhenDateIsTodayOrPast()
-    {
-        // Arrange
-        var todayDate = new DateOnly(2026, 8, 28);
+        var date = new DateOnly(2026, 8, 28);
         var baseCurrency = CurrencyCode.USD;
         var targetCurrency = CurrencyCode.TRY;
         var cancellationToken = CancellationToken.None;
@@ -66,27 +48,49 @@ public class ExchangeRateControllerTests
             .Returns(expectedResponse);
 
         // Act
-        var result = await _sut.GetExchangeRate(baseCurrency, targetCurrency, todayDate, cancellationToken);
+        var result = await _sut.GetExchangeRate(baseCurrency, targetCurrency, date, cancellationToken);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var returnedResponse = Assert.IsType<ExchangeRateResponse>(okResult.Value);
         Assert.Equal(expectedResponse.Rate, returnedResponse.Rate);
+
+        await _mediatorMock.Received(1).Send(Arg.Is<GetExchangeRateQuery>(q => 
+            q.Date == date && 
+            q.BaseCurrency == baseCurrency && 
+            q.TargetCurrency == targetCurrency), 
+            cancellationToken);
     }
 
     [Fact]
-    public async Task GetExchangeRates_ShouldReturnBadRequest_WhenDateIsInFuture()
+    public async Task GetExchangeRates_ShouldCallMediator_AndReturnOk()
     {
         // Arrange
-        var futureDate = new DateOnly(2026, 8, 29);
+        var date = new DateOnly(2026, 8, 28);
         var baseCurrency = CurrencyCode.USD;
         var cancellationToken = CancellationToken.None;
 
+        var expectedResponse = new ExchangeRatesListResponse
+        {
+            Date = "2026-08-28",
+            BaseCurrency = "USD",
+            Rates = new Dictionary<string, decimal> { { "TRY", 34.5m } }
+        };
+
+        _mediatorMock.Send(Arg.Any<GetExchangeRatesQuery>(), cancellationToken)
+            .Returns(expectedResponse);
+
         // Act
-        var result = await _sut.GetExchangeRates(baseCurrency, futureDate, cancellationToken);
+        var result = await _sut.GetExchangeRates(baseCurrency, date, cancellationToken);
 
         // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("Date cannot be in the future.", badRequestResult.Value);
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var returnedResponse = Assert.IsType<ExchangeRatesListResponse>(okResult.Value);
+        Assert.Equal(expectedResponse.BaseCurrency, returnedResponse.BaseCurrency);
+
+        await _mediatorMock.Received(1).Send(Arg.Is<GetExchangeRatesQuery>(q => 
+            q.Date == date && 
+            q.BaseCurrency == baseCurrency), 
+            cancellationToken);
     }
 }

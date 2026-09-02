@@ -22,7 +22,8 @@ RUN dotnet publish ExchangeRate.Api.csproj -c Release -o /app/publish --no-resto
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
-ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+# Run as non-root user built into .NET 8 runtime image for container security
+USER app
 
 # Copy published files from build stage
 COPY --from=build /app/publish .

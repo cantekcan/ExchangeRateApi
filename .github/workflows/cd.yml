@@ -30,4 +30,6 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/cantekcan/exchange-rate-api:latest
+          tags: |
+            ghcr.io/cantekcan/exchange-rate-api:latest
+            ghcr.io/cantekcan/exchange-rate-api:${{ github.sha }}
