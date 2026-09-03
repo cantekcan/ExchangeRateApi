@@ -22,26 +22,63 @@ A production-oriented .NET 8 Web API built around a simple exchange-rate use cas
 - GitHub Container Registry (GHCR)
 - Branch protection & automated AI Code Review powered by Gemini
 
-## Architecture
-
-    API
-     │
-     ▼
-    Application
-    (CQRS / MediatR)
-     │
-     ▼
-    Domain
-     ▲
-     │
-    Infrastructure
-     │
-     ▼
-    Frankfurter API
-
 ## Live Demo
 
 🚀 Swagger:  
 https://exchangerateapi-rzyg.onrender.com/swagger/index.html
 
 > The exchange-rate functionality is intentionally simple. The main goal of this project is to demonstrate how a simple business problem can be implemented with production-oriented architecture, resilience, observability, testing, security, CI/CD, and code-quality practices.
+
+## Architecture & Request Flow
+
+```text
+[ Client ]
+    │
+    ▼
+[ Render Reverse Proxy ]
+    │
+    ▼
+┌──────────────────────────────────────────────┐
+│ HTTP Middleware Pipeline                     │
+│                                              │
+│  1. Forwarded Headers  → Client IP           │
+│  2. Correlation ID     → X-Correlation-ID    │
+│  3. Exception Handling → ProblemDetails      │
+│  4. Rate Limiter       → 60 req/min per IP   │
+└──────────────────────┬───────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────┐
+│ API / Controller Layer                       │
+│                                              │
+│  ExchangeRateController                      │
+│  Model Binding & Request Handling             │
+└──────────────────────┬───────────────────────┘
+                       │
+                       │ MediatR.Send
+                       ▼
+┌──────────────────────────────────────────────┐
+│ Application Layer                            │
+│                                              │
+│  CQRS Query Handler                          │
+│  ExchangeRateManager                         │
+│  Business Rules & Validation                 │
+└──────────────────────┬───────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────┐
+│ Infrastructure Layer                         │
+│                                              │
+│  FrankfurterApiClient                        │
+│                                              │
+│  ┌────────────────────────────────────────┐  │
+│  │ HTTP Resilience                        │  │
+│  │  • Total Timeout: 10s                  │  │
+│  │  • Attempt Timeout: 4s                 │  │
+│  │  • Exponential Retry: 3 retries        │  │
+│  │  • Circuit Breaker: 50% / 15s          │  │
+│  └────────────────────┬───────────────────┘  │
+└───────────────────────┼──────────────────────┘
+                        │
+                        ▼
+              [ Frankfurter API ]
