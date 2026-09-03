@@ -104,4 +104,23 @@ public class RateLimitingAndCorrelationIdIntegrationTests : IClassFixture<WebApp
         Assert.Equal("Too Many Requests", doc.RootElement.GetProperty("title").GetString());
         Assert.Equal("Rate limit exceeded. Please try again later.", doc.RootElement.GetProperty("detail").GetString());
     }
+
+    [Fact]
+    public async Task RateLimiter_ShouldPartitionByForwardedIpAddress_WhenXForwardedForHeaderProvided()
+    {
+        // Arrange - Client with unique IP via X-Forwarded-For
+        var requestA = new HttpRequestMessage(HttpMethod.Get, "/api/exchange-rates/2099-01-01?baseCurrency=USD&targetCurrency=TRY");
+        requestA.Headers.Add("X-Forwarded-For", "203.0.113.199");
+
+        var requestB = new HttpRequestMessage(HttpMethod.Get, "/api/exchange-rates/2099-01-01?baseCurrency=USD&targetCurrency=TRY");
+        requestB.Headers.Add("X-Forwarded-For", "203.0.113.200");
+
+        // Act
+        var responseA = await _client.SendAsync(requestA);
+        var responseB = await _client.SendAsync(requestB);
+
+        // Assert - Both requests succeed independently under their own IP partition (400 validation error, not 429)
+        Assert.Equal(HttpStatusCode.BadRequest, responseA.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, responseB.StatusCode);
+    }
 }
