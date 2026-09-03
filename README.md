@@ -18,7 +18,7 @@ A production-oriented **.NET 8 Web API** built around a simple exchange-rate use
 - **GitHub Container Registry (GHCR)**
 - Branch protection & automated **AI Code Review** powered by Gemini
 
-## Architecture
+## Architecture 
 
     API
      │
