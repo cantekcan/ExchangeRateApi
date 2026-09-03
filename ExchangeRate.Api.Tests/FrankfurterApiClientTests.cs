@@ -112,6 +112,92 @@ public class FrankfurterApiClientTests
         Assert.Equal(34.05m, result.Rates["TRY"]);
     }
 
+    [Fact]
+    public async Task GetRateAsync_ShouldThrowHttpRequestException_WhenExternalApiReturns500InternalServerError()
+    {
+        // Arrange
+        var handler = new MockHttpMessageHandler(HttpStatusCode.InternalServerError, "Internal Server Error");
+        var httpClient = new HttpClient(handler);
+        var sut = new FrankfurterApiClient(httpClient, _options, _loggerMock);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            sut.GetRateAsync(new DateOnly(2026, 8, 28), CurrencyCode.USD, CurrencyCode.TRY, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetRateAsync_ShouldThrowOperationCanceledException_WhenCancellationTokenCancelled()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var handler = new MockHttpMessageHandler(HttpStatusCode.OK, "{}");
+        var httpClient = new HttpClient(handler);
+        var sut = new FrankfurterApiClient(httpClient, _options, _loggerMock);
+
+        // Act & Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            sut.GetRateAsync(new DateOnly(2026, 8, 28), CurrencyCode.USD, CurrencyCode.TRY, cts.Token));
+    }
+
+    [Fact]
+    public async Task GetRateAsync_ShouldThrowJsonException_WhenExternalApiReturnsMalformedJson()
+    {
+        // Arrange
+        var malformedJson = "{ invalid json structure ";
+        var handler = new MockHttpMessageHandler(HttpStatusCode.OK, malformedJson);
+        var httpClient = new HttpClient(handler);
+        var sut = new FrankfurterApiClient(httpClient, _options, _loggerMock);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<System.Text.Json.JsonException>(() =>
+            sut.GetRateAsync(new DateOnly(2026, 8, 28), CurrencyCode.USD, CurrencyCode.TRY, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetRatesAsync_ShouldThrowHttpRequestException_WhenExternalApiReturns500InternalServerError()
+    {
+        // Arrange
+        var handler = new MockHttpMessageHandler(HttpStatusCode.InternalServerError, "Internal Server Error");
+        var httpClient = new HttpClient(handler);
+        var sut = new FrankfurterApiClient(httpClient, _options, _loggerMock);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            sut.GetRatesAsync(new DateOnly(2026, 8, 28), CurrencyCode.USD, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetRatesAsync_ShouldThrowOperationCanceledException_WhenCancellationTokenCancelled()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var handler = new MockHttpMessageHandler(HttpStatusCode.OK, "{}");
+        var httpClient = new HttpClient(handler);
+        var sut = new FrankfurterApiClient(httpClient, _options, _loggerMock);
+
+        // Act & Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            sut.GetRatesAsync(new DateOnly(2026, 8, 28), CurrencyCode.USD, cts.Token));
+    }
+
+    [Fact]
+    public async Task GetRatesAsync_ShouldThrowJsonException_WhenExternalApiReturnsMalformedJson()
+    {
+        // Arrange
+        var malformedJson = "{ not a json ";
+        var handler = new MockHttpMessageHandler(HttpStatusCode.OK, malformedJson);
+        var httpClient = new HttpClient(handler);
+        var sut = new FrankfurterApiClient(httpClient, _options, _loggerMock);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<System.Text.Json.JsonException>(() =>
+            sut.GetRatesAsync(new DateOnly(2026, 8, 28), CurrencyCode.USD, CancellationToken.None));
+    }
+
     private class MockHttpMessageHandler : HttpMessageHandler
     {
         private readonly HttpStatusCode _statusCode;
@@ -125,6 +211,8 @@ public class FrankfurterApiClientTests
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var response = new HttpResponseMessage(_statusCode)
             {
                 Content = new StringContent(_content, Encoding.UTF8, "application/json")
